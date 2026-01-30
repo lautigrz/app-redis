@@ -25,7 +25,7 @@ app.get('/character', async (req, res) => {
 
     const response = await axios.get('https://thesimpsonsapi.com/api/characters');
 
-    await setCacheClient('characters', response.data.results);
+    await setCacheClient('characters', response.data.results, 10);
     
     res.set('X-Cache', 'MISS');
     return res.status(200).json({data: response.data.results});
@@ -74,11 +74,11 @@ async function getCacheClient(key){
 
 }
 
-async function setCacheClient(key, data) {
+async function setCacheClient(key, data, ttlSeconds = 60) {
     if(!client.isOpen) return null;
 
     try {
-        return await client.set(key, JSON.stringify(data));
+        return await client.set(key, JSON.stringify(data), {EX: ttlSeconds});
     }catch(err){
         console.error('Redis error:', err.message);
         return null
