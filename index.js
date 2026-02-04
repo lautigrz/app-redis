@@ -2,17 +2,13 @@ import express from 'express';
 import axios from 'axios';
 import responseTime from 'response-time';
 
-import {createClient} from 'redis';
-
-const client = createClient({
-  url: 'redis://127.0.0.1:6379'
-});
-
+import client, {connectClient} from './src/config/redis-client.js';
+import { rateLimiter } from './src/middlewares/limit-redis.js';
 const app = express();
 
 app.use(responseTime());
 
-app.get('/character', async (req, res) => {
+app.get('/character',rateLimiter, async (req, res) => {
 
     try{
 
@@ -86,13 +82,8 @@ async function setCacheClient(key, data, ttlSeconds = 60) {
 }
 
 
-client.on('error', (err) => {
-  console.error('Redis error:', err.message);
-
-});
-
 const main = async () => {
-  client.connect();
+  await connectClient();
   client.flushAll();
   console.log(' Connected to Redis');
   app.listen(3000);
